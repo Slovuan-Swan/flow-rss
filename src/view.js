@@ -1,6 +1,6 @@
 import { subscribe } from "valtio/vanilla";
 
-const render = (elements, state) => {
+const render = (elements, state, i18n) => {
   const { input, form, feedback } = elements;
 
   input.classList.remove("is-invalid");
@@ -10,19 +10,21 @@ const render = (elements, state) => {
   if (state.form.status === "invalid") {
     input.classList.add("is-invalid");
     feedback.classList.add("text-danger");
-    feedback.textContent = state.form.error;
+    // Переводим ключ ошибки с помощью i18next
+    feedback.textContent = i18n.t(state.form.error);
   }
 
   if (state.form.status === "valid") {
     form.reset();
     input.focus();
     feedback.classList.add("text-success");
-    feedback.textContent = "RSS успешно добавлен";
+    // Переводим текст успешного добавления
+    feedback.textContent = i18n.t("success");
   }
 };
 
-export default (elements, state) => {
+export default (elements, state, i18n) => {
   subscribe(state.form, () => {
-    render(elements, state);
+    render(elements, state, i18n);
   });
 };

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
+    "i18next": "^26.3.4",
     "valtio": "^2.3.2",
     "yup": "^1.7.1"
   }
