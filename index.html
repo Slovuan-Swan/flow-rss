@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flow-rss</title>
+  </head>
+  <body class="d-flex flex-column min-vh-100">
+    <main class="flex-grow-1">
+      <section class="container-fluid bg-dark p-5">
+        <div class="row">
+          <div class="col-md-10 col-lg-8 mx-auto text-white">
+            <h1 class="display-3 mb-0">RSS Агрегатор</h1>
+            <p class="lead">
+              Начните читать RSS сегодня! Это просто, это красиво.
+            </p>
+
+            <form action="" class="rss-form text-body">
+              <div class="row">
+                <div class="col">
+                  <div class="form-floating mb-2">
+                    <input
+                      autofocus=""
+                      id="url-input"
+                      name="url"
+                      aria-label="url"
+                      class="form-control w-100"
+                      placeholder="Ссылка RSS"
+                      required
+                      autocomplete="off"
+                    />
+                    <label for="url-input">Ссылка RSS</label>
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <button
+                    type="submit"
+                    aria-label="add"
+                    class="h-100 btn btn-lg btn-outline-primary px-sm-5"
+                  >
+                    Добавить
+                  </button>
+                </div>
+              </div>
+            </form>
+            <p class="mt-2 mb-0 text-muted">Пример: https://lenta.ru</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="container-fluid container-xxl p-5">
+        <div class="row">
+          <div class="col-md-8 posts"></div>
+          <div class="col-md-4 feeds"></div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
