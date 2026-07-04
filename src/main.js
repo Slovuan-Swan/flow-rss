@@ -79,6 +79,8 @@ const app = () => {
 
       watch(elements, state, i18nInstance);
 
+      updateFeeds(state);
+
       elements.form.addEventListener("submit", (e) => {
         e.preventDefault();
 
@@ -131,6 +133,38 @@ const app = () => {
           });
       });
     });
+};
+
+const updateFeeds = (state) => {
+  const promises = state.feeds.map((feed) => {
+    return axios
+      .get(buildProxyUrl(feed.url))
+      .then((response) => {
+        const { posts } = parseRss(response.data);
+        const currentLinks = state.posts
+          .filter((p) => p.feedId === feed.id)
+          .map((p) => p.link);
+        const newPosts = posts.filter(
+          (post) => !currentLinks.includes(post.link),
+        );
+
+        if (newPosts.length > 0) {
+          const postsWithIds = newPosts.map((post) => ({
+            ...post,
+            id: crypto.randomUUID(),
+            feedId: feed.id,
+          }));
+          state.posts.unshift(...postsWithIds);
+        }
+      })
+      .catch((err) => {
+        console.error("Error during auto-update feed:", feed.url, err);
+      });
+  });
+
+  Promise.all(promises).then(() => {
+    setTimeout(() => updateFeeds(state), 5000);
+  });
 };
 
 app();
