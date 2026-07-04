@@ -14,7 +14,6 @@
             <p class="lead">
               Начните читать RSS сегодня! Это просто, это красиво.
             </p>
-
             <form action="" class="rss-form text-body">
               <div class="row">
                 <div class="col">
@@ -56,5 +55,43 @@
       </section>
     </main>
     <script type="module" src="/src/main.js"></script>
+    <div
+      class="modal fade"
+      id="modal"
+      tabindex="-1"
+      aria-labelledby="modalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalLabel"></h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body text-break"></div>
+          <div class="modal-footer">
+            <a
+              class="btn btn-primary full-link"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Читать полностью</a
+            >
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Закрыть
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

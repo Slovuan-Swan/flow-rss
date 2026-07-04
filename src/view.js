@@ -47,8 +47,8 @@ const renderFeeds = (container, feeds, i18n) => {
   container.appendChild(card);
 };
 
-const renderPosts = (container, posts, i18n) => {
-  if (!container) return; // Защита от null
+const renderPosts = (container, posts, readPostIds, i18n) => {
+  if (!container) return;
   container.innerHTML = "";
   if (posts.length === 0) return;
 
@@ -63,20 +63,47 @@ const renderPosts = (container, posts, i18n) => {
     a.setAttribute("href", post.link);
     a.setAttribute("target", "_blank");
     a.setAttribute("rel", "noopener noreferrer");
-    a.className = "fw-bold";
+    a.setAttribute("data-id", post.id);
+
+    // Если пост прочитан — делаем ссылку обычной, если нет — жирной (fw-bold)
+    const isRead = readPostIds.includes(post.id);
+    a.className = isRead ? "fw-normal text-secondary" : "fw-bold";
     a.textContent = post.title;
 
+    const button = document.createElement("button");
+    button.setAttribute("type", "button");
+    button.className = "btn btn-outline-primary btn-sm";
+    button.setAttribute("data-id", post.id);
+    button.setAttribute("data-bs-toggle", "modal");
+    button.setAttribute("data-bs-target", "#modal");
+    button.textContent = "Просмотр";
+
     li.appendChild(a);
+    li.appendChild(button);
     ul.appendChild(li);
   });
 
   container.appendChild(card);
 };
 
+// Функция для заполнения данными модального окна
+const renderModal = (postId, posts) => {
+  if (!postId) return;
+  const post = posts.find((p) => p.id === postId);
+  if (!post) return;
+
+  const modalTitle = document.querySelector(".modal-title");
+  const modalBody = document.querySelector(".modal-body");
+  const modalFullLink = document.querySelector(".modal-footer .full-link");
+
+  modalTitle.textContent = post.title;
+  modalBody.textContent = post.description;
+  modalFullLink.setAttribute("href", post.link);
+};
+
 export default (elements, state, i18n) => {
   const { input, form, feedback, feedsContainer, postsContainer } = elements;
 
-  // Слушаем изменения состояния
   subscribe(state, () => {
     input.classList.remove("is-invalid");
     feedback.classList.remove("text-danger", "text-success");
@@ -95,8 +122,8 @@ export default (elements, state, i18n) => {
       feedback.textContent = i18n.t("success");
     }
 
-    // Рендерим контент при любых изменениях в массивах данных
     renderFeeds(feedsContainer, state.feeds, i18n);
-    renderPosts(postsContainer, state.posts, i18n);
+    renderPosts(postsContainer, state.posts, state.uiState.readPostIds, i18n);
+    renderModal(state.uiState.displayedPostId, state.posts);
   });
 };

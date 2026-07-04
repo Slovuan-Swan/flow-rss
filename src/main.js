@@ -6,6 +6,7 @@ import watch from "./view.js";
 import parseRss from "./parser.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./style.css";
+import "bootstrap";
 
 const resources = {
   ru: {
@@ -38,6 +39,10 @@ const state = proxy({
   },
   feeds: [],
   posts: [],
+  uiState: {
+    displayedPostId: null,
+    readPostIds: [],
+  },
 });
 
 const addedUrls = [];
@@ -80,6 +85,19 @@ const app = () => {
       watch(elements, state, i18nInstance);
 
       updateFeeds(state);
+
+      elements.postsContainer.addEventListener("click", (e) => {
+        const id = e.target.dataset.id;
+        if (!id) return;
+
+        if (!state.uiState.readPostIds.includes(id)) {
+          state.uiState.readPostIds.push(id);
+        }
+
+        if (e.target.tagName === "BUTTON") {
+          state.uiState.displayedPostId = id;
+        }
+      });
 
       elements.form.addEventListener("submit", (e) => {
         e.preventDefault();
