@@ -31,17 +31,15 @@ yup.setLocale({
   mixed: { required: "errors.required", notOneOf: "errors.notOneOf" },
 });
 
-// Расширяем состояние для хранения списков фидов и постов
 const state = proxy({
   form: {
-    status: "filling", // filling, loading, invalid, valid
+    status: "filling",
     error: null,
   },
   feeds: [],
   posts: [],
 });
 
-// Массив добавленных ссылок для валидации уникальности
 const addedUrls = [];
 
 const validateUrl = (url, urls) => {
@@ -49,12 +47,8 @@ const validateUrl = (url, urls) => {
   return schema.validate(url);
 };
 
-// Функция сборки URL для прокси allorigins с отключением кэша
 const buildProxyUrl = (url) => {
-  const proxyUrl = new URL("https://allorigins.win");
-  proxyUrl.searchParams.set("disableCache", "true");
-  proxyUrl.searchParams.set("url", url);
-  return proxyUrl.toString();
+  return `https://corsproxy.io?url=${encodeURIComponent(url)}`;
 };
 
 const app = () => {
@@ -95,22 +89,24 @@ const app = () => {
 
         validateUrl(url, addedUrls)
           .then((validUrl) => {
-            // Выполняем HTTP запрос через axios
             return axios
               .get(buildProxyUrl(validUrl))
               .then((response) => ({ response, validUrl }));
           })
           .then(({ response, validUrl }) => {
-            // Парсим полученный XML контент
-            const { feed, posts } = parseRss(response.data.contents);
+            const rawContent = response.data;
+
+            if (!rawContent) {
+              throw new Error("Empty response from proxy");
+            }
+
+            const { feed, posts } = parseRss(rawContent);
 
             const feedId = crypto.randomUUID();
 
-            // Добавляем фид
             state.feeds.push({ ...feed, id: feedId, url: validUrl });
             addedUrls.push(validUrl);
 
-            // Добавляем посты
             posts.forEach((post) => {
               state.posts.push({ ...post, id: crypto.randomUUID(), feedId });
             });
@@ -120,8 +116,11 @@ const app = () => {
             state.form.status = "filling";
           })
           .catch((error) => {
-            // Дифференцируем типы возникших ошибок
-            if (error.isParserError) {
+            console.error("Catch block caught error:", error);
+            if (
+              error.isParserError ||
+              error.message === "Empty response from proxy"
+            ) {
               state.form.error = "errors.invalidRss";
             } else if (axios.isAxiosError(error)) {
               state.form.error = "errors.network";
