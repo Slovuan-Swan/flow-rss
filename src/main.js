@@ -18,7 +18,7 @@ const resources = {
         network: "Ошибка сети",
         invalidRss: "Ресурс не содержит валидный RSS",
       },
-      success: "RSS успешно добавлен",
+      success: "RSS успешно загружен",
       interface: {
         feeds: "Фиды",
         posts: "Посты",
@@ -70,17 +70,8 @@ const app = () => {
         input: document.querySelector("#url-input"),
         feedsContainer: document.querySelector(".feeds"),
         postsContainer: document.querySelector(".posts"),
+        feedback: document.querySelector(".feedback"),
       };
-
-      let feedbackEl = document.querySelector(".feedback");
-      if (!feedbackEl) {
-        feedbackEl = document.createElement("div");
-        feedbackEl.className = "feedback invalid-feedback";
-        elements.input.parentNode.appendChild(feedbackEl);
-        elements.feedback = feedbackEl;
-      } else {
-        elements.feedback = feedbackEl;
-      }
 
       watch(elements, state, i18nInstance);
 
@@ -98,7 +89,9 @@ const app = () => {
           state.uiState.displayedPostId = id;
         }
       });
-
+      elements.input.addEventListener("input", () => {
+        state.form.status = "filling";
+      });
       elements.form.addEventListener("submit", (e) => {
         e.preventDefault();
 
@@ -133,7 +126,6 @@ const app = () => {
 
             state.form.error = null;
             state.form.status = "valid";
-            state.form.status = "filling";
           })
           .catch((error) => {
             console.error("Catch block caught error:", error);

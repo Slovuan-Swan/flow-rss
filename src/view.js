@@ -22,7 +22,7 @@ const buildCard = (titleText) => {
 };
 
 const renderFeeds = (container, feeds, i18n) => {
-  if (!container) return; // Защита от null
+  if (!container) return;
   container.innerHTML = "";
   if (feeds.length === 0) return;
 
@@ -65,7 +65,6 @@ const renderPosts = (container, posts, readPostIds, i18n) => {
     a.setAttribute("rel", "noopener noreferrer");
     a.setAttribute("data-id", post.id);
 
-    // Если пост прочитан — делаем ссылку обычной, если нет — жирной (fw-bold)
     const isRead = readPostIds.includes(post.id);
     a.className = isRead ? "fw-normal text-secondary" : "fw-bold";
     a.textContent = post.title;
@@ -86,7 +85,6 @@ const renderPosts = (container, posts, readPostIds, i18n) => {
   container.appendChild(card);
 };
 
-// Функция для заполнения данными модального окна
 const renderModal = (postId, posts) => {
   if (!postId) return;
   const post = posts.find((p) => p.id === postId);
