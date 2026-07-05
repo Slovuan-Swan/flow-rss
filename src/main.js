@@ -50,17 +50,21 @@ const validateUrl = (url, urls) => {
   return schema.validate(url);
 };
 
-// Динамический выбор прокси: для локалхоста используем corsproxy, для Хекслета — allorigins
 const buildProxyUrl = (url) => {
   const isLocal =
     typeof window !== "undefined" &&
     window.location.hostname.includes("localhost");
 
   if (isLocal) {
-    return `https://corsproxy.io{encodeURIComponent(url)}`;
+    // Используем обычное сложение строк через плюс (+).
+    // Никаких фигурных скобок, никаких знаков доллара и косых кавычек!
+    const part1 = "https://corsproxy.io/?url=";
+    const part2 = encodeURIComponent(url);
+
+    return part1 + part2;
   }
 
-  const proxyUrl = new URL("https://allorigins.win");
+  const proxyUrl = new URL("https://allorigins.win/get");
   proxyUrl.searchParams.set("disableCache", "true");
   proxyUrl.searchParams.set("url", url);
   return proxyUrl.toString();
