@@ -130,14 +130,14 @@ const app = () => {
 
             const { feed, posts } = parseRss(rawContent);
             const feedId = crypto.randomUUID();
-
             const isFirstFeed = state.feeds.length === 0;
 
+            // Сначала разблокируем UI и выводим "success"
             state.form.error = null;
             state.form.status = "valid";
 
+            // Затем наполняем списки контентом
             state.feeds.push({ ...feed, id: feedId, url: validUrl });
-
             posts.forEach((post) => {
               state.posts.push({ ...post, id: crypto.randomUUID(), feedId });
             });

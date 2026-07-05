@@ -1,6 +1,7 @@
 import { subscribe } from "valtio/vanilla";
 
-const buildCard = (titleText) => {
+// Эталонный генератор контейнеров карточек по ТЗ Хекслета
+const createCard = (titleText) => {
   const card = document.createElement("div");
   card.className = "card border-0";
 
@@ -26,7 +27,7 @@ const renderFeeds = (container, feeds, i18n) => {
   container.innerHTML = "";
   if (feeds.length === 0) return;
 
-  const { card, ul } = buildCard(i18n.t("interface.feeds"));
+  const { card, ul } = createCard(i18n.t("interface.feeds"));
 
   feeds.forEach((feed) => {
     const li = document.createElement("li");
@@ -52,7 +53,7 @@ const renderPosts = (container, posts, readPostIds, i18n) => {
   container.innerHTML = "";
   if (posts.length === 0) return;
 
-  const { card, ul } = buildCard(i18n.t("interface.posts"));
+  const { card, ul } = createCard(i18n.t("interface.posts"));
 
   posts.forEach((post) => {
     const li = document.createElement("li");
@@ -104,6 +105,7 @@ export default (elements, state, i18n) => {
   const submitButton = form.querySelector('button[type="submit"]');
 
   subscribe(state, () => {
+    // Чистим стили перед каждым изменением состояния
     input.classList.remove("is-invalid");
     feedback.classList.remove("text-danger", "text-success");
     feedback.textContent = "";
@@ -131,7 +133,9 @@ export default (elements, state, i18n) => {
       if (submitButton) submitButton.removeAttribute("disabled");
       feedback.classList.add("text-success");
       feedback.textContent = i18n.t("success");
-      form.reset();
+      // ИСПРАВЛЕНИЕ: Очищаем только поле ввода без полного ресета формы,
+      // чтобы убрать конфликты событий в Playwright
+      input.value = "";
       input.focus();
     }
 
