@@ -1,6 +1,6 @@
 import { proxy } from "valtio/vanilla";
 import * as yup from "yup";
-import i18next from "i18next";
+import i18n from "i18next";
 import axios from "axios";
 import watch from "./view.js";
 import parseRss from "./parser.js";
@@ -50,8 +50,6 @@ const validateUrl = (url, urls) => {
   return schema.validate(url);
 };
 
-// Эталонная сборка URL. Никаких угадываний хоста.
-// Разделение сред происходит на этапе компиляции Vite.
 const buildProxyUrl = (url) => {
   const proxyUrl = new URL("https://allorigins.win/get");
   proxyUrl.searchParams.set("disableCache", "true");
@@ -70,29 +68,28 @@ const extractXml = (response) => {
   return typeof rawData === "string" ? rawData.trim() : rawData;
 };
 
-// Чистый, стандартный сетевой запрос, который Хекслет перехватывает без осечек
 const makeRequest = (url) => {
   return axios.get(buildProxyUrl(url));
 };
 
 const app = () => {
-  const i18nInstance = i18next.createInstance();
+  const elements = {
+    form: document.querySelector(".rss-form"),
+    input: document.querySelector("#url-input"),
+    feedsContainer: document.querySelector(".feeds"),
+    postsContainer: document.querySelector(".posts"),
+    feedback: document.querySelector(".feedback"),
+  };
 
-  i18nInstance
+  // Инициализируем глобальный инстанс i18n напрямую
+  i18n
     .init({
       lng: "ru",
       resources,
     })
     .then(() => {
-      const elements = {
-        form: document.querySelector(".rss-form"),
-        input: document.querySelector("#url-input"),
-        feedsContainer: document.querySelector(".feeds"),
-        postsContainer: document.querySelector(".posts"),
-        feedback: document.querySelector(".feedback"),
-      };
-
-      watch(elements, state, i18nInstance);
+      watch(elements, state, i18n);
+      updateFeeds(state);
 
       elements.postsContainer.addEventListener("click", (e) => {
         const id = e.target.dataset.id;
