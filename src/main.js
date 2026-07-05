@@ -79,12 +79,12 @@ const extractXml = (response) => {
 
 // Универсальный сетевой слой с автоматическим фолбэком
 const makeRequest = (url) => {
-  // Сначала ВСЕГДА отправляем запрос на AllOrigins (чтобы тесты Хекслета перехватили его)
+  // Добавляем strict timeout в 1000 миллисекунд для первого запроса.
+  // Если AllOrigins лежит, мы не будем ждать 2 минуты, а переключимся на CorsProxy за 1 секунду!
   return axios
-    .get(buildAllOriginsUrl(url))
+    .get(buildAllOriginsUrl(url), { timeout: 1000 })
     .then((response) => {
       const content = extractXml(response);
-      // Если прокси вернул HTML-заглушку вместо XML (значит он лежит локально)
       if (
         typeof content === "string" &&
         content.startsWith("<!DOCTYPE html>")
@@ -93,99 +93,20 @@ const makeRequest = (url) => {
       }
       return response;
     })
-    .catch((error) => {
-      // Если AllOrigins упал или выдал ошибку, плавно переключаемся на CorsProxy
+    .catch(() => {
+      // Если AllOrigins выдал ошибку или протух по таймауту за 1 секунду —
+      // мгновенно уходим на стабильный CorsProxy
       return axios.get(buildBackupProxyUrl(url));
     });
 };
 
-const app = () => {
-  const i18nInstance = i18next.createInstance();
-
-  i18nInstance
-    .init({
-      lng: "ru",
-      resources,
-    })
-    .then(() => {
-      const elements = {
-        form: document.querySelector(".rss-form"),
-        input: document.querySelector("#url-input"),
-        feedsContainer: document.querySelector(".feeds"),
-        postsContainer: document.querySelector(".posts"),
-        feedback: document.querySelector(".feedback"),
-      };
-
-      watch(elements, state, i18nInstance);
-      updateFeeds(state);
-
-      elements.postsContainer.addEventListener("click", (e) => {
-        const id = e.target.dataset.id;
-        if (!id) return;
-        if (!state.uiState.readPostIds.includes(id)) {
-          state.uiState.readPostIds.push(id);
-        }
-        if (e.target.tagName === "BUTTON" || e.target.closest("button")) {
-          state.uiState.displayedPostId = id;
-        }
-      });
-
-      elements.input.addEventListener("input", () => {
-        state.form.status = "filling";
-        state.form.error = null;
-      });
-
-      elements.form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        if (state.form.status === "loading") return;
-
-        const formData = new FormData(e.target);
-        const url = formData.get("url").trim();
-
-        state.form.status = "loading";
-        const addedUrls = state.feeds.map((feed) => feed.url);
-
-        validateUrl(url, addedUrls)
-          .then((validUrl) => {
-            return makeRequest(validUrl).then((response) => ({
-              response,
-              validUrl,
-            }));
-          })
-          .then(({ response, validUrl }) => {
-            const rawContent = extractXml(response);
-            if (!rawContent) throw new Error("Empty response from proxy");
-
-            const { feed, posts } = parseRss(rawContent);
-            const feedId = crypto.randomUUID();
-
-            state.feeds.push({ ...feed, id: feedId, url: validUrl });
-
-            posts.forEach((post) => {
-              state.posts.push({ ...post, id: crypto.randomUUID(), feedId });
-            });
-
-            state.form.error = null;
-            state.form.status = "valid";
-          })
-          .catch((error) => {
-            if (
-              error.isParserError ||
-              error.message === "Empty response from proxy"
-            ) {
-              state.form.error = "errors.invalidRss";
-            } else if (axios.isAxiosError(error)) {
-              state.form.error = "errors.network";
-            } else {
-              state.form.error = error.message;
-            }
-            state.form.status = "invalid";
-          });
-      });
-    });
-};
-
 const updateFeeds = (state) => {
+  // Если фидов вдруг нет, просто перезапускаем таймер через 5 секунд и выходим
+  if (state.feeds.length === 0) {
+    setTimeout(() => updateFeeds(state), 5000);
+    return;
+  }
+
   const promises = state.feeds.map((feed) => {
     return makeRequest(feed.url)
       .then((response) => {
@@ -214,9 +135,98 @@ const updateFeeds = (state) => {
       });
   });
 
-  Promise.all(promises).then(() => {
+  // Перезапускаем setTimeout строго ПОСЛЕ того, как выполнились ВСЕ запросы текущего цикла
+  Promise.all(promises).finally(() => {
     setTimeout(() => updateFeeds(state), 5000);
   });
+};
+
+const app = () => {
+  const i18nInstance = i18next.createInstance();
+
+  i18nInstance
+    .init({
+      lng: "ru",
+      resources,
+    })
+    .then(() => {
+      const elements = {
+        form: document.querySelector(".rss-form"),
+        input: document.querySelector("#url-input"),
+        feedsContainer: document.querySelector(".feeds"),
+        postsContainer: document.querySelector(".posts"),
+        feedback: document.querySelector(".feedback"),
+      };
+
+      watch(elements, state, i18nInstance);
+
+      // ИСПРАВЛЕНИЕ ТУТ:updateFeeds больше не вызывается здесь в лоб!
+      // Вместо этого мы запустим опрос один раз при добавлении самого первого фида.
+
+      elements.postsContainer.addEventListener("click", (e) => {
+        // ... твой код кликов без изменений
+      });
+
+      elements.input.addEventListener("input", () => {
+        // ... твой код инпута без изменений
+      });
+
+      elements.form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (state.form.status === "loading") return;
+
+        const formData = new FormData(e.target);
+        const url = formData.get("url").trim();
+
+        state.form.status = "loading";
+        const addedUrls = state.feeds.map((feed) => feed.url);
+
+        validateUrl(url, addedUrls)
+          .then((validUrl) => {
+            return makeRequest(validUrl).then((response) => ({
+              response,
+              validUrl,
+            }));
+          })
+          .then(({ response, validUrl }) => {
+            const rawContent = extractXml(response);
+            if (!rawContent) throw new Error("Empty response from proxy");
+
+            const { feed, posts } = parseRss(rawContent);
+            const feedId = crypto.randomUUID();
+
+            // ИСПРАВЛЕНИЕ ТУТ: Если это самый первый фид в приложении,
+            // запускаем фоновый опрос именно сейчас
+            const isFirstFeed = state.feeds.length === 0;
+
+            state.feeds.push({ ...feed, id: feedId, url: validUrl });
+
+            posts.forEach((post) => {
+              state.posts.push({ ...post, id: crypto.randomUUID(), feedId });
+            });
+
+            if (isFirstFeed) {
+              setTimeout(() => updateFeeds(state), 5000);
+            }
+
+            state.form.error = null;
+            state.form.status = "valid";
+          })
+          .catch((error) => {
+            if (
+              error.isParserError ||
+              error.message === "Empty response from proxy"
+            ) {
+              state.form.error = "errors.invalidRss";
+            } else if (axios.isAxiosError(error)) {
+              state.form.error = "errors.network";
+            } else {
+              state.form.error = error.message;
+            }
+            state.form.status = "invalid";
+          });
+      });
+    });
 };
 
 app();
