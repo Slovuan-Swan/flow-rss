@@ -136,6 +136,9 @@ const app = () => {
 
             const isFirstFeed = state.feeds.length === 0;
 
+            state.form.error = null;
+            state.form.status = "valid";
+
             state.feeds.push({ ...feed, id: feedId, url: validUrl });
 
             posts.forEach((post) => {
@@ -145,9 +148,6 @@ const app = () => {
             if (isFirstFeed) {
               setTimeout(() => updateFeeds(state), 5000);
             }
-
-            state.form.error = null;
-            state.form.status = "valid";
           })
           .catch((error) => {
             if (
