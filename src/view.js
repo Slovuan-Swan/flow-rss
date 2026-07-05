@@ -103,56 +103,41 @@ export default (elements, state, i18n) => {
   const { input, form, feedback, feedsContainer, postsContainer } = elements;
   const submitButton = form.querySelector('button[type="submit"]');
 
-  subscribe(state, (ops) => {
-    // Получаем путь измененного свойства во Valtio
-    const path = ops[0]?.[1]?.join(".");
+  subscribe(state, () => {
+    // Сбрасываем дефолтные классы перед каждым рендером состояния формы
+    input.classList.remove("is-invalid");
+    feedback.classList.remove("text-danger", "text-success");
+    feedback.textContent = "";
 
-    // 1. Отрисовка контента только при изменении массивов данных
-    if (
-      !path ||
-      path.startsWith("feeds") ||
-      path.startsWith("posts") ||
-      path.startsWith("uiState")
-    ) {
-      renderFeeds(feedsContainer, state.feeds, i18n);
-      renderPosts(postsContainer, state.posts, state.uiState.readPostIds, i18n);
-      renderModal(state.uiState.displayedPostId, state.posts);
+    if (state.form.status === "loading") {
+      input.setAttribute("disabled", "true");
+      if (submitButton) submitButton.setAttribute("disabled", "true");
     }
 
-    // 2. Обработка исключительно состояния формы
-    if (!path || path.startsWith("form")) {
-      if (state.form.status === "loading") {
-        input.setAttribute("disabled", "true");
-        if (submitButton) submitButton.setAttribute("disabled", "true");
-      }
-
-      if (state.form.status === "filling") {
-        input.removeAttribute("disabled");
-        if (submitButton) submitButton.removeAttribute("disabled");
-        input.classList.remove("is-invalid");
-        feedback.classList.remove("text-danger", "text-success");
-        feedback.textContent = "";
-      }
-
-      if (state.form.status === "invalid") {
-        input.removeAttribute("disabled");
-        if (submitButton) submitButton.removeAttribute("disabled");
-        input.classList.add("is-invalid");
-        feedback.classList.remove("text-success");
-        feedback.classList.add("text-danger");
-        feedback.textContent = i18n.t(state.form.error);
-      }
-
-      if (state.form.status === "valid") {
-        input.removeAttribute("disabled");
-        if (submitButton) submitButton.removeAttribute("disabled");
-        input.classList.remove("is-invalid");
-        feedback.classList.remove("text-danger");
-        feedback.classList.add("text-success");
-        feedback.textContent = i18n.t("success");
-        input.value = "";
-        input.focus();
-      }
+    if (state.form.status === "filling") {
+      input.removeAttribute("disabled");
+      if (submitButton) submitButton.removeAttribute("disabled");
     }
+
+    if (state.form.status === "invalid") {
+      input.removeAttribute("disabled");
+      if (submitButton) submitButton.removeAttribute("disabled");
+      input.classList.add("is-invalid");
+      feedback.classList.add("text-danger");
+      feedback.textContent = i18n.t(state.form.error);
+    }
+
+    if (state.form.status === "valid") {
+      input.removeAttribute("disabled");
+      if (submitButton) submitButton.removeAttribute("disabled");
+      feedback.classList.add("text-success");
+      feedback.textContent = i18n.t("success");
+      form.reset();
+      input.focus();
+    }
+
+    renderFeeds(feedsContainer, state.feeds, i18n);
+    renderPosts(postsContainer, state.posts, state.uiState.readPostIds, i18n);
+    renderModal(state.uiState.displayedPostId, state.posts);
   });
 };
