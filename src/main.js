@@ -50,26 +50,22 @@ const validateUrl = (url, urls) => {
   return schema.validate(url);
 };
 
-const buildProxyUrl = (url) => {
-  // Робот Playwright на Хекслете ВСЕГДА работает в режиме Headless (без окна).
-  // Это единственный признак, который невозможно обмануть или спутать с локалхостом.
-  const isTestEnv =
-    typeof window !== "undefined" &&
-    window.navigator.userAgent.includes("Headless");
+// Функция сборки URL для AllOrigins (строго по спецификации тестов Хекслета)
+const buildAllOriginsUrl = (url) => {
+  const proxyUrl = new URL("https://allorigins.win/get");
+  proxyUrl.searchParams.set("disableCache", "true");
+  proxyUrl.searchParams.set("url", url);
+  return proxyUrl.toString();
+};
 
-  if (isTestEnv) {
-    const proxyUrl = new URL("https://allorigins.win/get");
-    proxyUrl.searchParams.set("disableCache", "true");
-    proxyUrl.searchParams.set("url", url);
-    return proxyUrl.toString();
-  }
-
-  // Для твоей локальной разработки за компьютером (даже на localhost:8080)
+// Функция сборки URL для резервного CorsProxy
+const buildBackupProxyUrl = (url) => {
   const part1 = "https://corsproxy.io/?url=";
   const part2 = encodeURIComponent(url);
   return part1 + part2;
 };
 
+// Безопасное извлечение контента
 const extractXml = (response) => {
   if (!response || !response.data) return null;
   const rawData = response.data;
@@ -79,6 +75,28 @@ const extractXml = (response) => {
       : rawData.contents;
   }
   return typeof rawData === "string" ? rawData.trim() : rawData;
+};
+
+// Универсальный сетевой слой с автоматическим фолбэком
+const makeRequest = (url) => {
+  // Сначала ВСЕГДА отправляем запрос на AllOrigins (чтобы тесты Хекслета перехватили его)
+  return axios
+    .get(buildAllOriginsUrl(url))
+    .then((response) => {
+      const content = extractXml(response);
+      // Если прокси вернул HTML-заглушку вместо XML (значит он лежит локально)
+      if (
+        typeof content === "string" &&
+        content.startsWith("<!DOCTYPE html>")
+      ) {
+        throw new Error("Proxy returned HTML");
+      }
+      return response;
+    })
+    .catch((error) => {
+      // Если AllOrigins упал или выдал ошибку, плавно переключаемся на CorsProxy
+      return axios.get(buildBackupProxyUrl(url));
+    });
 };
 
 const app = () => {
@@ -129,9 +147,10 @@ const app = () => {
 
         validateUrl(url, addedUrls)
           .then((validUrl) => {
-            return axios
-              .get(buildProxyUrl(validUrl))
-              .then((response) => ({ response, validUrl }));
+            return makeRequest(validUrl).then((response) => ({
+              response,
+              validUrl,
+            }));
           })
           .then(({ response, validUrl }) => {
             const rawContent = extractXml(response);
@@ -168,8 +187,7 @@ const app = () => {
 
 const updateFeeds = (state) => {
   const promises = state.feeds.map((feed) => {
-    return axios
-      .get(buildProxyUrl(feed.url))
+    return makeRequest(feed.url)
       .then((response) => {
         const rawContent = extractXml(response);
         if (!rawContent) return;
