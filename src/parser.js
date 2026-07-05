@@ -9,17 +9,20 @@ export default (xmlString) => {
     throw error;
   }
 
-  const channel = doc.querySelector("channel");
-  if (!channel) {
-    const error = new Error("Invalid RSS structure");
-    error.isParserError = true;
-    throw error;
-  }
+  // Бронебойный поиск заголовков фида: ищем первый попавшийся title в документе
+  const feedTitleEl = doc.querySelector("title");
+  const feedDescriptionEl = doc.querySelector("description");
 
-  const feedTitleEl = channel.querySelector("title");
-  const feedDescriptionEl = channel.querySelector("description");
+  // Ищем все статьи
+  const items = doc.querySelectorAll("item");
 
-  if (!feedTitleEl) {
+  // Если нет ни тега rss/channel, ни элементов item — это гарантированно не RSS (например, обычный HTML)
+  const hasRssStructure =
+    doc.querySelector("rss") ||
+    doc.querySelector("channel") ||
+    items.length > 0;
+
+  if (!hasRssStructure || !feedTitleEl) {
     const error = new Error("Invalid RSS structure");
     error.isParserError = true;
     throw error;
@@ -30,7 +33,6 @@ export default (xmlString) => {
     ? feedDescriptionEl.textContent
     : "";
 
-  const items = doc.querySelectorAll("item");
   const posts = Array.from(items).map((item) => {
     const titleEl = item.querySelector("title");
     const linkEl = item.querySelector("link");
