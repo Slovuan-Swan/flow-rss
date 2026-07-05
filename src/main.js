@@ -50,14 +50,15 @@ const validateUrl = (url, urls) => {
   return schema.validate(url);
 };
 
-// Исправлено: строгий прокси, адаптированный под тесты Хекслета и живой сервер
+// Функция сборки URL строго по спецификации AllOrigins для прохождения тестов
 const buildProxyUrl = (url) => {
-  const proxyUrl = new URL("https://allorigins.win");
+  const proxyUrl = new URL("https://allorigins.win/get");
   proxyUrl.searchParams.set("disableCache", "true");
   proxyUrl.searchParams.set("url", url);
   return proxyUrl.toString();
 };
 
+// Безопасное извлечение XML текста без лишних пробелов по краям
 const extractXml = (response) => {
   const rawData = response.data;
   if (rawData && typeof rawData === "object" && "contents" in rawData) {
@@ -115,7 +116,6 @@ const app = () => {
 
         state.form.status = "loading";
 
-        // Исправлено: Хекслет гоняет тесты в одной среде, берем урлы динамически из стейта
         const addedUrls = state.feeds.map((feed) => feed.url);
 
         validateUrl(url, addedUrls)
