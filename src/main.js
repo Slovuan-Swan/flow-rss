@@ -81,7 +81,6 @@ const app = () => {
     feedback: document.querySelector(".feedback"),
   };
 
-  // Инициализируем глобальный инстанс i18n напрямую
   i18n
     .init({
       lng: "ru",
@@ -132,15 +131,24 @@ const app = () => {
             const feedId = crypto.randomUUID();
             const isFirstFeed = state.feeds.length === 0;
 
-            // Сначала разблокируем UI и выводим "success"
+            // Подтавливаем массив новых постов заранее
+            const postsWithIds = posts.map((post) => ({
+              ...post,
+              id: crypto.randomUUID(),
+              feedId,
+            }));
+
+            // ВАЖНО: сначала пушим данные, форма всё еще в статусе loading
+            state.feeds.push({ ...feed, id: feedId, url: validUrl });
+
+            // ИСПРАВЛЕНИЕ: Пушим все посты ОДНИМ пакетом через деструктуризацию.
+            // Это вызовет ровно ОДИН триггер подписки Valtio вместо лавины в цикле!
+            state.posts.push(...postsWithIds);
+
+            // В самый последний момент меняем статус формы на valid.
+            // К этому моменту все данные уже лежат в стейте, и UI отрендерится идеально.
             state.form.error = null;
             state.form.status = "valid";
-
-            // Затем наполняем списки контентом
-            state.feeds.push({ ...feed, id: feedId, url: validUrl });
-            posts.forEach((post) => {
-              state.posts.push({ ...post, id: crypto.randomUUID(), feedId });
-            });
 
             if (isFirstFeed) {
               setTimeout(() => updateFeeds(state), 5000);
@@ -189,6 +197,7 @@ const updateFeeds = (state) => {
             id: crypto.randomUUID(),
             feedId: feed.id,
           }));
+          // Тоже пушим пакетно в начало массива
           state.posts.unshift(...postsWithIds);
         }
       })
