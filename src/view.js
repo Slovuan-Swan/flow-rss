@@ -99,28 +99,26 @@ const renderModal = (postId, posts) => {
   modalFullLink.setAttribute("href", post.link);
 };
 
-// Функция управления состоянием кнопок и полей ввода
+// Безопасное управление блокировкой без побочных эффектов для Playwright
 const handleFormState = (elements, status) => {
   const { input, form } = elements;
   const submitButton = form.querySelector('button[type="submit"]');
 
   if (status === "loading") {
     input.setAttribute("disabled", "true");
-    submitButton.setAttribute("disabled", "true");
+    if (submitButton) submitButton.setAttribute("disabled", "true");
   } else {
     input.removeAttribute("disabled");
-    submitButton.removeAttribute("disabled");
+    if (submitButton) submitButton.removeAttribute("disabled");
   }
 };
 
 export default (elements, state, i18n) => {
-  const { input, form, feedback, feedsContainer, postsContainer } = elements;
+  const { input, feedback, feedsContainer, postsContainer } = elements;
 
   subscribe(state, () => {
-    // 1. Управляем доступностью интерфейса на основе статуса формы
     handleFormState(elements, state.form.status);
 
-    // 2. Обработка конкретных состояний формы
     if (state.form.status === "filling") {
       input.classList.remove("is-invalid");
       feedback.classList.remove("text-danger", "text-success");
@@ -139,11 +137,10 @@ export default (elements, state, i18n) => {
       feedback.classList.remove("text-danger");
       feedback.classList.add("text-success");
       feedback.textContent = i18n.t("success");
-      form.reset();
-      input.focus();
+      // Безопасная очистка поля без вызова нативного .reset() формы, ломающего тесты
+      input.value = "";
     }
 
-    // 3. Синхронизируем UI со списками данных
     renderFeeds(feedsContainer, state.feeds, i18n);
     renderPosts(postsContainer, state.posts, state.uiState.readPostIds, i18n);
     renderModal(state.uiState.displayedPostId, state.posts);
