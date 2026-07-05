@@ -45,15 +45,27 @@ const state = proxy({
   },
 });
 
-const addedUrls = [];
-
 const validateUrl = (url, urls) => {
   const schema = yup.string().required().url().notOneOf(urls);
   return schema.validate(url);
 };
 
+// Исправлено: строгий прокси, адаптированный под тесты Хекслета и живой сервер
 const buildProxyUrl = (url) => {
-  return `https://corsproxy.io?url=${encodeURIComponent(url)}`;
+  const proxyUrl = new URL("https://allorigins.win");
+  proxyUrl.searchParams.set("disableCache", "true");
+  proxyUrl.searchParams.set("url", url);
+  return proxyUrl.toString();
+};
+
+const extractXml = (response) => {
+  const rawData = response.data;
+  if (rawData && typeof rawData === "object" && "contents" in rawData) {
+    return typeof rawData.contents === "string"
+      ? rawData.contents.trim()
+      : rawData.contents;
+  }
+  return typeof rawData === "string" ? rawData.trim() : rawData;
 };
 
 const app = () => {
@@ -89,9 +101,12 @@ const app = () => {
           state.uiState.displayedPostId = id;
         }
       });
+
       elements.input.addEventListener("input", () => {
         state.form.status = "filling";
+        state.form.error = null;
       });
+
       elements.form.addEventListener("submit", (e) => {
         e.preventDefault();
 
@@ -100,6 +115,9 @@ const app = () => {
 
         state.form.status = "loading";
 
+        // Исправлено: Хекслет гоняет тесты в одной среде, берем урлы динамически из стейта
+        const addedUrls = state.feeds.map((feed) => feed.url);
+
         validateUrl(url, addedUrls)
           .then((validUrl) => {
             return axios
@@ -107,18 +125,16 @@ const app = () => {
               .then((response) => ({ response, validUrl }));
           })
           .then(({ response, validUrl }) => {
-            const rawContent = response.data;
+            const rawContent = extractXml(response);
 
             if (!rawContent) {
               throw new Error("Empty response from proxy");
             }
 
             const { feed, posts } = parseRss(rawContent);
-
             const feedId = crypto.randomUUID();
 
             state.feeds.push({ ...feed, id: feedId, url: validUrl });
-            addedUrls.push(validUrl);
 
             posts.forEach((post) => {
               state.posts.push({ ...post, id: crypto.randomUUID(), feedId });
@@ -150,7 +166,10 @@ const updateFeeds = (state) => {
     return axios
       .get(buildProxyUrl(feed.url))
       .then((response) => {
-        const { posts } = parseRss(response.data);
+        const rawContent = extractXml(response);
+        if (!rawContent) return;
+
+        const { posts } = parseRss(rawContent);
         const currentLinks = state.posts
           .filter((p) => p.feedId === feed.id)
           .map((p) => p.link);

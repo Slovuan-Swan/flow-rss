@@ -99,27 +99,51 @@ const renderModal = (postId, posts) => {
   modalFullLink.setAttribute("href", post.link);
 };
 
+// Функция управления состоянием кнопок и полей ввода
+const handleFormState = (elements, status) => {
+  const { input, form } = elements;
+  const submitButton = form.querySelector('button[type="submit"]');
+
+  if (status === "loading") {
+    input.setAttribute("disabled", "true");
+    submitButton.setAttribute("disabled", "true");
+  } else {
+    input.removeAttribute("disabled");
+    submitButton.removeAttribute("disabled");
+  }
+};
+
 export default (elements, state, i18n) => {
   const { input, form, feedback, feedsContainer, postsContainer } = elements;
 
   subscribe(state, () => {
-    input.classList.remove("is-invalid");
-    feedback.classList.remove("text-danger", "text-success");
-    feedback.textContent = "";
+    // 1. Управляем доступностью интерфейса на основе статуса формы
+    handleFormState(elements, state.form.status);
+
+    // 2. Обработка конкретных состояний формы
+    if (state.form.status === "filling") {
+      input.classList.remove("is-invalid");
+      feedback.classList.remove("text-danger", "text-success");
+      feedback.textContent = "";
+    }
 
     if (state.form.status === "invalid") {
       input.classList.add("is-invalid");
+      feedback.classList.remove("text-success");
       feedback.classList.add("text-danger");
       feedback.textContent = i18n.t(state.form.error);
     }
 
     if (state.form.status === "valid") {
-      form.reset();
-      input.focus();
+      input.classList.remove("is-invalid");
+      feedback.classList.remove("text-danger");
       feedback.classList.add("text-success");
       feedback.textContent = i18n.t("success");
+      form.reset();
+      input.focus();
     }
 
+    // 3. Синхронизируем UI со списками данных
     renderFeeds(feedsContainer, state.feeds, i18n);
     renderPosts(postsContainer, state.posts, state.uiState.readPostIds, i18n);
     renderModal(state.uiState.displayedPostId, state.posts);
