@@ -50,7 +50,16 @@ const validateUrl = (url, urls) => {
   return schema.validate(url);
 };
 
+// Динамический выбор прокси: для локалхоста используем corsproxy, для Хекслета — allorigins
 const buildProxyUrl = (url) => {
+  const isLocal =
+    typeof window !== "undefined" &&
+    window.location.hostname.includes("localhost");
+
+  if (isLocal) {
+    return `https://corsproxy.io{encodeURIComponent(url)}`;
+  }
+
   const proxyUrl = new URL("https://allorigins.win");
   proxyUrl.searchParams.set("disableCache", "true");
   proxyUrl.searchParams.set("url", url);
@@ -107,6 +116,7 @@ const app = () => {
       elements.form.addEventListener("submit", (e) => {
         e.preventDefault();
         if (state.form.status === "loading") return;
+
         const formData = new FormData(e.target);
         const url = formData.get("url").trim();
 

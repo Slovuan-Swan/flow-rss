@@ -104,7 +104,6 @@ export default (elements, state, i18n) => {
   const submitButton = form.querySelector('button[type="submit"]');
 
   subscribe(state, () => {
-    // Сбрасываем дефолтные классы перед каждым рендером состояния формы
     input.classList.remove("is-invalid");
     feedback.classList.remove("text-danger", "text-success");
     feedback.textContent = "";
