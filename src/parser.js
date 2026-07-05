@@ -1,24 +1,24 @@
 export default (xmlString) => {
   const parser = new DOMParser();
-  // Передаем text/xml вместо application/xml, так как он более устойчив к мелким ошибкам разметки
+  // Передаем text/xml вместо application/xml для максимальной устойчивости к разметке
   const doc = parser.parseFromString(xmlString, "text/xml");
 
   const parseError = doc.querySelector("parsererror");
   if (parseError) {
-    // Выводим текст ошибки парсинга в консоль браузера для дебага
     console.error("DOMParser error details:", parseError.textContent);
-    console.log("Received raw content was:", xmlString);
-
     const error = new Error("Invalid RSS");
     error.isParserError = true;
     throw error;
   }
 
-  // Используем опциональную цепочку ?.textContent на случай, если структура тегов минимально отличается
-  const feedTitleEl = doc.querySelector("channel > title");
-  const feedDescriptionEl = doc.querySelector("channel > description");
+  // ИСПРАВЛЕНИЕ: Убираем жесткую вложенность '>' и ищем теги просто по всему документу
+  const feedTitleEl = doc.querySelector("title");
+  const feedDescriptionEl = doc.querySelector("description");
 
-  if (!feedTitleEl) {
+  // Проверяем, является ли документ валидным RSS (в нем обязательно должен быть тег <rss> или <channel>)
+  const isRss = doc.querySelector("rss") || doc.querySelector("channel");
+
+  if (!isRss || !feedTitleEl) {
     const error = new Error("Invalid RSS structure");
     error.isParserError = true;
     throw error;
