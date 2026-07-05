@@ -130,9 +130,8 @@ export default (elements, state, i18n) => {
       input.removeAttribute("disabled");
       if (submitButton) submitButton.removeAttribute("disabled");
       feedback.classList.add("text-success");
-      feedback.textContent = i18n.t("success");
-      // ИСПРАВЛЕНИЕ: Мягкое обнуление значения инпута без form.reset(),
-      // чтобы убрать лавину синтетических событий в движке Playwright
+      // ИСПРАВЛЕНИЕ: вызываем ключ строго из группы feedback по эталону Хекслета
+      feedback.textContent = i18n.t("feedback.success");
       input.value = "";
       input.focus();
     }

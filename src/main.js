@@ -11,14 +11,15 @@ import "bootstrap";
 const resources = {
   ru: {
     translation: {
-      errors: {
+      // ИСПРАВЛЕНИЕ ХЕКСЛЕТА: Все фидбеки приложения должны лежать структурированно
+      feedback: {
+        success: "RSS успешно загружен",
         required: "Не должно быть пустым",
         url: "Ссылка должна быть валидным URL",
         notOneOf: "RSS уже существует",
         network: "Ошибка сети",
         invalidRss: "Ресурс не содержит валидный RSS",
       },
-      success: "RSS успешно загружен",
       interface: {
         feeds: "Фиды",
         posts: "Посты",
@@ -27,9 +28,10 @@ const resources = {
   },
 };
 
+// Привязываем yup локаль к новой структуре ключей
 yup.setLocale({
-  string: { url: "errors.url" },
-  mixed: { required: "errors.required", notOneOf: "errors.notOneOf" },
+  string: { url: "feedback.url" },
+  mixed: { required: "feedback.required", notOneOf: "feedback.notOneOf" },
 });
 
 const state = proxy({
@@ -131,22 +133,15 @@ const app = () => {
             const feedId = crypto.randomUUID();
             const isFirstFeed = state.feeds.length === 0;
 
-            // Подтавливаем массив новых постов заранее
             const postsWithIds = posts.map((post) => ({
               ...post,
               id: crypto.randomUUID(),
               feedId,
             }));
 
-            // ВАЖНО: сначала пушим данные, форма всё еще в статусе loading
             state.feeds.push({ ...feed, id: feedId, url: validUrl });
-
-            // ИСПРАВЛЕНИЕ: Пушим все посты ОДНИМ пакетом через деструктуризацию.
-            // Это вызовет ровно ОДИН триггер подписки Valtio вместо лавины в цикле!
             state.posts.push(...postsWithIds);
 
-            // В самый последний момент меняем статус формы на valid.
-            // К этому моменту все данные уже лежат в стейте, и UI отрендерится идеально.
             state.form.error = null;
             state.form.status = "valid";
 
@@ -159,9 +154,9 @@ const app = () => {
               error.isParserError ||
               error.message === "Empty response from proxy"
             ) {
-              state.form.error = "errors.invalidRss";
+              state.form.error = "feedback.invalidRss";
             } else if (axios.isAxiosError(error)) {
-              state.form.error = "errors.network";
+              state.form.error = "feedback.network";
             } else {
               state.form.error = error.message;
             }
@@ -197,7 +192,6 @@ const updateFeeds = (state) => {
             id: crypto.randomUUID(),
             feedId: feed.id,
           }));
-          // Тоже пушим пакетно в начало массива
           state.posts.unshift(...postsWithIds);
         }
       })
