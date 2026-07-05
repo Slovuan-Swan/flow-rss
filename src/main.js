@@ -50,36 +50,22 @@ const validateUrl = (url, urls) => {
   return schema.validate(url);
 };
 
-// Функция сборки URL строго по спецификации AllOrigins для прохождения тестов
 const buildProxyUrl = (url) => {
-  const proxyUrl = new URL("https://allorigins.win/get");
+  const proxyUrl = new URL("https://allorigins.win");
   proxyUrl.searchParams.set("disableCache", "true");
   proxyUrl.searchParams.set("url", url);
   return proxyUrl.toString();
 };
 
 const extractXml = (response) => {
-  // Если ответа вообще нет, возвращаем null
-  if (!response || !response.data) {
-    return null;
-  }
-
+  if (!response || !response.data) return null;
   const rawData = response.data;
-
-  // Случай 1: Настоящий AllOrigins (возвращает объект с полем contents)
   if (rawData && typeof rawData === "object" && "contents" in rawData) {
     return typeof rawData.contents === "string"
       ? rawData.contents.trim()
       : rawData.contents;
   }
-
-  // Случай 2: Тестовое окружение (может возвращать чистую XML-строку напрямую в data)
-  if (typeof rawData === "string") {
-    return rawData.trim();
-  }
-
-  // Случай 3: Если Хекслет вернул данные в неожиданном формате, пробуем привести к строке
-  return rawData;
+  return typeof rawData === "string" ? rawData.trim() : rawData;
 };
 
 const app = () => {
@@ -100,18 +86,15 @@ const app = () => {
       };
 
       watch(elements, state, i18nInstance);
-
       updateFeeds(state);
 
       elements.postsContainer.addEventListener("click", (e) => {
         const id = e.target.dataset.id;
         if (!id) return;
-
         if (!state.uiState.readPostIds.includes(id)) {
           state.uiState.readPostIds.push(id);
         }
-
-        if (e.target.tagName === "BUTTON") {
+        if (e.target.tagName === "BUTTON" || e.target.closest("button")) {
           state.uiState.displayedPostId = id;
         }
       });
@@ -123,12 +106,10 @@ const app = () => {
 
       elements.form.addEventListener("submit", (e) => {
         e.preventDefault();
-
         const formData = new FormData(e.target);
         const url = formData.get("url").trim();
 
         state.form.status = "loading";
-
         const addedUrls = state.feeds.map((feed) => feed.url);
 
         validateUrl(url, addedUrls)
@@ -139,10 +120,7 @@ const app = () => {
           })
           .then(({ response, validUrl }) => {
             const rawContent = extractXml(response);
-
-            if (!rawContent) {
-              throw new Error("Empty response from proxy");
-            }
+            if (!rawContent) throw new Error("Empty response from proxy");
 
             const { feed, posts } = parseRss(rawContent);
             const feedId = crypto.randomUUID();
@@ -157,7 +135,6 @@ const app = () => {
             state.form.status = "valid";
           })
           .catch((error) => {
-            console.error("Catch block caught error:", error);
             if (
               error.isParserError ||
               error.message === "Empty response from proxy"

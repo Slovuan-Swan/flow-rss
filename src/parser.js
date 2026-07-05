@@ -4,13 +4,11 @@ export default (xmlString) => {
 
   const parseError = doc.querySelector("parsererror");
   if (parseError) {
-    console.error("DOMParser error details:", parseError.textContent);
     const error = new Error("Invalid RSS");
     error.isParserError = true;
     throw error;
   }
 
-  // Находим контейнер канала (фида)
   const channel = doc.querySelector("channel");
   if (!channel) {
     const error = new Error("Invalid RSS structure");
@@ -18,7 +16,6 @@ export default (xmlString) => {
     throw error;
   }
 
-  // Ищем заголовки фида СТРОГО внутри тега channel через пробел (любая вложенность)
   const feedTitleEl = channel.querySelector("title");
   const feedDescriptionEl = channel.querySelector("description");
 
@@ -33,7 +30,6 @@ export default (xmlString) => {
     ? feedDescriptionEl.textContent
     : "";
 
-  // Собираем посты
   const items = doc.querySelectorAll("item");
   const posts = Array.from(items).map((item) => {
     const titleEl = item.querySelector("title");

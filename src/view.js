@@ -94,55 +94,65 @@ const renderModal = (postId, posts) => {
   const modalBody = document.querySelector(".modal-body");
   const modalFullLink = document.querySelector(".modal-footer .full-link");
 
-  modalTitle.textContent = post.title;
-  modalBody.textContent = post.description;
-  modalFullLink.setAttribute("href", post.link);
-};
-
-// Безопасное управление блокировкой без побочных эффектов для Playwright
-const handleFormState = (elements, status) => {
-  const { input, form } = elements;
-  const submitButton = form.querySelector('button[type="submit"]');
-
-  if (status === "loading") {
-    input.setAttribute("disabled", "true");
-    if (submitButton) submitButton.setAttribute("disabled", "true");
-  } else {
-    input.removeAttribute("disabled");
-    if (submitButton) submitButton.removeAttribute("disabled");
-  }
+  if (modalTitle) modalTitle.textContent = post.title;
+  if (modalBody) modalBody.textContent = post.description;
+  if (modalFullLink) modalFullLink.setAttribute("href", post.link);
 };
 
 export default (elements, state, i18n) => {
-  const { input, feedback, feedsContainer, postsContainer } = elements;
+  const { input, form, feedback, feedsContainer, postsContainer } = elements;
+  const submitButton = form.querySelector('button[type="submit"]');
 
-  subscribe(state, () => {
-    handleFormState(elements, state.form.status);
+  subscribe(state, (ops) => {
+    // Получаем путь измененного свойства во Valtio
+    const path = ops[0]?.[1]?.join(".");
 
-    if (state.form.status === "filling") {
-      input.classList.remove("is-invalid");
-      feedback.classList.remove("text-danger", "text-success");
-      feedback.textContent = "";
+    // 1. Отрисовка контента только при изменении массивов данных
+    if (
+      !path ||
+      path.startsWith("feeds") ||
+      path.startsWith("posts") ||
+      path.startsWith("uiState")
+    ) {
+      renderFeeds(feedsContainer, state.feeds, i18n);
+      renderPosts(postsContainer, state.posts, state.uiState.readPostIds, i18n);
+      renderModal(state.uiState.displayedPostId, state.posts);
     }
 
-    if (state.form.status === "invalid") {
-      input.classList.add("is-invalid");
-      feedback.classList.remove("text-success");
-      feedback.classList.add("text-danger");
-      feedback.textContent = i18n.t(state.form.error);
-    }
+    // 2. Обработка исключительно состояния формы
+    if (!path || path.startsWith("form")) {
+      if (state.form.status === "loading") {
+        input.setAttribute("disabled", "true");
+        if (submitButton) submitButton.setAttribute("disabled", "true");
+      }
 
-    if (state.form.status === "valid") {
-      input.classList.remove("is-invalid");
-      feedback.classList.remove("text-danger");
-      feedback.classList.add("text-success");
-      feedback.textContent = i18n.t("success");
-      // Безопасная очистка поля без вызова нативного .reset() формы, ломающего тесты
-      input.value = "";
-    }
+      if (state.form.status === "filling") {
+        input.removeAttribute("disabled");
+        if (submitButton) submitButton.removeAttribute("disabled");
+        input.classList.remove("is-invalid");
+        feedback.classList.remove("text-danger", "text-success");
+        feedback.textContent = "";
+      }
 
-    renderFeeds(feedsContainer, state.feeds, i18n);
-    renderPosts(postsContainer, state.posts, state.uiState.readPostIds, i18n);
-    renderModal(state.uiState.displayedPostId, state.posts);
+      if (state.form.status === "invalid") {
+        input.removeAttribute("disabled");
+        if (submitButton) submitButton.removeAttribute("disabled");
+        input.classList.add("is-invalid");
+        feedback.classList.remove("text-success");
+        feedback.classList.add("text-danger");
+        feedback.textContent = i18n.t(state.form.error);
+      }
+
+      if (state.form.status === "valid") {
+        input.removeAttribute("disabled");
+        if (submitButton) submitButton.removeAttribute("disabled");
+        input.classList.remove("is-invalid");
+        feedback.classList.remove("text-danger");
+        feedback.classList.add("text-success");
+        feedback.textContent = i18n.t("success");
+        input.value = "";
+        input.focus();
+      }
+    }
   });
 };
