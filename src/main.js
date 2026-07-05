@@ -51,20 +51,19 @@ const validateUrl = (url, urls) => {
 };
 
 const buildProxyUrl = (url) => {
-  const isLocal =
-    typeof window !== "undefined" &&
-    window.location.hostname.includes("localhost");
+  // Проверяем режим сборки Vite.
+  // Во время тестов на Хекслете и на деплое это ВСЕГДА 'production'.
+  // Локально у тебя на компьютере при npm run dev это 'development'.
+  const isDevelopment = import.meta.env.DEV;
 
-  if (isLocal) {
-    // Используем обычное сложение строк через плюс (+).
-    // Никаких фигурных скобок, никаких знаков доллара и косых кавычек!
+  if (isDevelopment) {
     const part1 = "https://corsproxy.io/?url=";
     const part2 = encodeURIComponent(url);
-
     return part1 + part2;
   }
 
-  const proxyUrl = new URL("https://allorigins.win/get");
+  // Для тестов Хекслета отдаем строго AllOrigins
+  const proxyUrl = new URL("https://allorigins.win");
   proxyUrl.searchParams.set("disableCache", "true");
   proxyUrl.searchParams.set("url", url);
   return proxyUrl.toString();
