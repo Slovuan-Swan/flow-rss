@@ -63,7 +63,7 @@ const buildProxyUrl = (url) => {
   }
 
   // Для тестов Хекслета отдаем строго AllOrigins
-  const proxyUrl = new URL("https://allorigins.win");
+  const proxyUrl = new URL("https://allorigins.win/get");
   proxyUrl.searchParams.set("disableCache", "true");
   proxyUrl.searchParams.set("url", url);
   return proxyUrl.toString();
