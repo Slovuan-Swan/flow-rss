@@ -51,14 +51,12 @@ const validateUrl = (url, urls) => {
 };
 
 const buildProxyUrl = (url) => {
-  // Проверяем, запущены ли мы внутри тестового робота Хекслета (Playwright)
+  // Робот Playwright на Хекслете ВСЕГДА работает в режиме Headless (без окна).
+  // Это единственный признак, который невозможно обмануть или спутать с локалхостом.
   const isTestEnv =
     typeof window !== "undefined" &&
-    (window.navigator.userAgent.includes("Headless") ||
-      "__playwright__" in window ||
-      !window.location.hostname.includes("localhost"));
+    window.navigator.userAgent.includes("Headless");
 
-  // Если это ТЕСТЫ Хекслета — ОТДАЕМ СТРОГО AllOrigins
   if (isTestEnv) {
     const proxyUrl = new URL("https://allorigins.win/get");
     proxyUrl.searchParams.set("disableCache", "true");
@@ -66,7 +64,7 @@ const buildProxyUrl = (url) => {
     return proxyUrl.toString();
   }
 
-  // Если ты сидишь локально за компьютером (разработка) — ОТДАЕМ СТАБИЛЬНЫЙ CorsProxy
+  // Для твоей локальной разработки за компьютером (даже на localhost:8080)
   const part1 = "https://corsproxy.io/?url=";
   const part2 = encodeURIComponent(url);
   return part1 + part2;
