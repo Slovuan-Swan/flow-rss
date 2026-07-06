@@ -201,4 +201,3 @@ const updateFeeds = (state) => {
 };
 
 export default app; // ЭТАЛОН: Тесты импортируют функцию app напрямую
-app();
