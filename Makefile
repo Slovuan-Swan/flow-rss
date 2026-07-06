@@ -1,14 +1,15 @@
+# Target: install dependencies
 install:
 	npm ci
 
-develop:
-	npx vite
-
-build:
-	npx vite build
-
-preview:
-	npx vite preview
-
+#	Target: run eslint in all js files
 lint:
 	npx eslint .
+
+#	Target: run app in browser
+run:
+	npm run dev
+
+# Target: build project
+build:
+	npm run build

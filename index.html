@@ -1,77 +1,27 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" role="document">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="src/style.css" />
     <title>Flow RSS</title>
   </head>
   <body class="d-flex flex-column min-vh-100">
-    <main class="flex-grow-1">
-      <section class="container-fluid bg-dark p-5">
-        <div class="row">
-          <div class="col-md-10 col-lg-8 mx-auto text-white">
-            <h1 class="display-3 mb-0">RSS агрегатор</h1>
-            <p class="lead">
-              Начните читать RSS сегодня! Это легко, это красиво.
-            </p>
-            <form action="" class="rss-form text-body">
-              <div class="row">
-                <div class="col">
-                  <div class="form-floating mb-2">
-                    <input
-                      autofocus=""
-                      id="url-input"
-                      name="url"
-                      aria-label="url"
-                      class="form-control w-100"
-                      placeholder="Ссылка RSS"
-                      autocomplete="off"
-                    />
-                    <label for="url-input">Ссылка RSS</label>
-                  </div>
-                </div>
-                <div class="col-auto">
-                  <button
-                    type="submit"
-                    aria-label="add"
-                    class="h-100 btn btn-lg btn-outline-primary px-sm-5"
-                  >
-                    Добавить
-                  </button>
-                </div>
-              </div>
-            </form>
-            <p class="mt-2 mb-1 text-secondary">
-              Пример: https://lorem-rss.hexlet.app/feed
-            </p>
-            <div class="feedback"></div>
-          </div>
-        </div>
-      </section>
-      <section class="container-fluid container-xxl p-5">
-        <div class="row">
-          <!-- Сюда скрипт будет выводить посты -->
-          <div class="col-md-8 posts"></div>
-          <!-- Сюда скрипт будет выводить фиды -->
-          <div class="col-md-4 feeds"></div>
-        </div>
-      </section>
-    </main>
-    <script type="module" src="/src/index.js"></script>
     <div
-      class="modal fade"
       id="modal"
+      class="modal fade"
       tabindex="-1"
-      aria-labelledby="modalLabel"
+      aria-labelledby="modal"
       aria-hidden="true"
     >
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="modalLabel"></h5>
+            <h5 class="modal-title" aria-label="Modal title"></h5>
             <button
               type="button"
-              class="btn-close"
+              class="btn-close close"
               data-bs-dismiss="modal"
               aria-label="Close"
             ></button>
@@ -79,22 +29,93 @@
           <div class="modal-body text-break"></div>
           <div class="modal-footer">
             <a
-              class="btn btn-primary full-link"
+              id="modal-link"
+              class="btn btn-primary"
               href="#"
               target="_blank"
               rel="noopener noreferrer"
-              >Читать полностью</a
-            >
+              aria-label="Open link"
+            ></a>
             <button
+              id="modal-close"
               type="button"
               class="btn btn-secondary"
               data-bs-dismiss="modal"
-            >
-              Закрыть
-            </button>
+            ></button>
           </div>
         </div>
       </div>
     </div>
+    <main class="main flex-grow-1">
+      <section class="container-fluid p-4 p-sm-5 bg-dark">
+        <div class="row">
+          <div class="col-md-10 col-lg-8 mx-auto text-white">
+            <div
+              class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3"
+            >
+              <div>
+                <h1
+                  id="rss-title"
+                  class="display-3 mb-0"
+                  aria-label="RSS Aggregator title"
+                ></h1>
+                <p id="rss-description" class="lead mb-0"></p>
+              </div>
+              <div class="btn-group" role="group">
+                <button
+                  type="button"
+                  class="btn btn-primary active"
+                  id="ru-button"
+                ></button>
+                <button
+                  type="button"
+                  class="btn btn-outline-primary"
+                  id="en-button"
+                ></button>
+              </div>
+            </div>
+            <form action id="rss-form" class="rss-form text-body">
+              <div class="row">
+                <div class="col-sm mb-2 mb-sm-0">
+                  <div class="form-floating">
+                    <input
+                      id="url-input"
+                      type="text"
+                      name="url"
+                      aria-label="url"
+                      class="form-control w-100"
+                      autocomplete="off"
+                      autofocus
+                      placeholder=""
+                    />
+                    <label for="url-input"></label>
+                  </div>
+                </div>
+                <div class="col-sm-auto">
+                  <button
+                    id="rss-submit"
+                    type="submit"
+                    aria-label="add"
+                    class="h-100 px-5 px-sm-4 btn btn-lg btn-primary"
+                  ></button>
+                </div>
+              </div>
+            </form>
+            <p id="rss-example" class="text-secondary mb-0 mt-2"></p>
+            <p id="feedback" class="feedback m-0 position-absolute small"></p>
+          </div>
+        </div>
+      </section>
+      <section class="container-fluid container-xxl p-4 p-sm-5">
+        <div class="row">
+          <div id="posts" class="col-md-12 col-lg-8 mx-auto order-1"></div>
+          <div
+            id="feeds"
+            class="col-md-12 col-lg-4 mx-auto order-0 order-lg-1"
+          ></div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="src/index.js"></script>
   </body>
 </html>
