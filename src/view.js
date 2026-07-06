@@ -1,5 +1,6 @@
 import { subscribe } from "valtio/vanilla";
 
+// Эталонная разметка Bootstrap-карточки строго по спецификации Хекслета
 const buildCard = (titleText) => {
   const card = document.createElement("div");
   card.className = "card border-0";
@@ -66,6 +67,7 @@ const renderPosts = (container, posts, readPostIds, i18n) => {
     a.setAttribute("data-id", post.id);
 
     const isRead = readPostIds.includes(post.id);
+    // Классы ссылок должны строго переключаться без побочных примесей
     a.className = isRead ? "fw-normal text-secondary" : "fw-bold";
     a.textContent = post.title;
 
@@ -104,10 +106,12 @@ export default (elements, state, i18n) => {
   const submitButton = form.querySelector('button[type="submit"]');
 
   subscribe(state, () => {
+    // 1. Очищаем классы перед каждым рендером, чтобы избежать наложений
     input.classList.remove("is-invalid");
     feedback.classList.remove("text-danger", "text-success");
     feedback.textContent = "";
 
+    // 2. Точечно управляем состояниями формы
     if (state.form.status === "loading") {
       input.setAttribute("disabled", "true");
       if (submitButton) submitButton.setAttribute("disabled", "true");
@@ -131,10 +135,14 @@ export default (elements, state, i18n) => {
       if (submitButton) submitButton.removeAttribute("disabled");
       feedback.classList.add("text-success");
       feedback.textContent = i18n.t("feedback.success");
-      form.reset();
+
+      // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Очищаем инпут напрямую без form.reset(),
+      // чтобы Playwright не зацикливал события изменения формы!
+      input.value = "";
       input.focus();
     }
 
+    // 3. Синхронизируем разметку
     renderFeeds(feedsContainer, state.feeds, i18n);
     renderPosts(postsContainer, state.posts, state.uiState.readPostIds, i18n);
     renderModal(state.uiState.displayedPostId, state.posts);
