@@ -58,17 +58,9 @@ const buildProxyUrl = (url) => {
 };
 
 const extractXml = (response) => {
-  if (!response || !response.data) return null;
-  const rawData = response.data;
-  if (rawData && typeof rawData === "object" && "contents" in rawData) {
-    return typeof rawData.contents === "string"
-      ? rawData.contents.trim()
-      : rawData.contents;
-  }
-  return typeof rawData === "string" ? rawData.trim() : rawData;
+  return response.data.contents;
 };
 
-// ЭТАЛОН: Возвращаем Promise из функции инициализации приложения, как требует Хекслет
 const app = () => {
   const elements = {
     form: document.querySelector(".rss-form"),
@@ -125,29 +117,21 @@ const app = () => {
 
             const { feed, posts } = parseRss(rawContent);
             const feedId = crypto.randomUUID();
-            const isFirstFeed = state.feeds.length === 0;
+
+            state.form.error = null;
+            state.form.status = "valid";
+
+            state.feeds.push({ ...feed, id: feedId, url: validUrl });
 
             const postsWithIds = posts.map((post) => ({
               ...post,
               id: crypto.randomUUID(),
               feedId,
             }));
-
-            state.feeds.push({ ...feed, id: feedId, url: validUrl });
             state.posts.push(...postsWithIds);
-
-            state.form.error = null;
-            state.form.status = "valid";
-
-            if (isFirstFeed) {
-              setTimeout(() => updateFeeds(state), 5000);
-            }
           })
           .catch((error) => {
-            if (
-              error.isParserError ||
-              error.message === "Empty response from proxy"
-            ) {
+            if (error.isParserError) {
               state.form.error = "feedback.invalidRss";
             } else if (axios.isAxiosError(error)) {
               state.form.error = "feedback.network";
@@ -161,11 +145,6 @@ const app = () => {
 };
 
 const updateFeeds = (state) => {
-  if (state.feeds.length === 0) {
-    setTimeout(() => updateFeeds(state), 5000);
-    return;
-  }
-
   const promises = state.feeds.map((feed) => {
     return axios
       .get(buildProxyUrl(feed.url))
@@ -200,4 +179,4 @@ const updateFeeds = (state) => {
   });
 };
 
-export default app; // ЭТАЛОН: Тесты импортируют функцию app напрямую
+export default app;
