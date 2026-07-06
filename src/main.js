@@ -51,7 +51,8 @@ const validateUrl = (url, urls) => {
 };
 
 const buildProxyUrl = (url) => {
-  const proxyUrl = new URL("https://allorigins.win/get");
+  const proxyUrl = new URL("https://allorigins.win");
+  proxyUrl.pathname = "/get";
   proxyUrl.searchParams.set("disableCache", "true");
   proxyUrl.searchParams.set("url", url);
   return proxyUrl.toString();
