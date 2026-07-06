@@ -11,7 +11,6 @@ import "bootstrap";
 const resources = {
   ru: {
     translation: {
-      // ИСПРАВЛЕНИЕ ХЕКСЛЕТА: Все фидбеки приложения должны лежать структурированно
       feedback: {
         success: "RSS успешно загружен",
         required: "Не должно быть пустым",
@@ -28,7 +27,6 @@ const resources = {
   },
 };
 
-// Привязываем yup локаль к новой структуре ключей
 yup.setLocale({
   string: { url: "feedback.url" },
   mixed: { required: "feedback.required", notOneOf: "feedback.notOneOf" },
@@ -70,10 +68,7 @@ const extractXml = (response) => {
   return typeof rawData === "string" ? rawData.trim() : rawData;
 };
 
-const makeRequest = (url) => {
-  return axios.get(buildProxyUrl(url));
-};
-
+// ЭТАЛОН: Возвращаем Promise из функции инициализации приложения, как требует Хекслет
 const app = () => {
   const elements = {
     form: document.querySelector(".rss-form"),
@@ -83,7 +78,7 @@ const app = () => {
     feedback: document.querySelector(".feedback"),
   };
 
-  i18n
+  return i18n
     .init({
       lng: "ru",
       resources,
@@ -120,10 +115,9 @@ const app = () => {
 
         validateUrl(url, addedUrls)
           .then((validUrl) => {
-            return makeRequest(validUrl).then((response) => ({
-              response,
-              validUrl,
-            }));
+            return axios
+              .get(buildProxyUrl(validUrl))
+              .then((response) => ({ response, validUrl }));
           })
           .then(({ response, validUrl }) => {
             const rawContent = extractXml(response);
@@ -173,7 +167,8 @@ const updateFeeds = (state) => {
   }
 
   const promises = state.feeds.map((feed) => {
-    return makeRequest(feed.url)
+    return axios
+      .get(buildProxyUrl(feed.url))
       .then((response) => {
         const rawContent = extractXml(response);
         if (!rawContent) return;
@@ -205,4 +200,5 @@ const updateFeeds = (state) => {
   });
 };
 
+export default app; // ЭТАЛОН: Тесты импортируют функцию app напрямую
 app();

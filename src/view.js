@@ -130,9 +130,8 @@ export default (elements, state, i18n) => {
       input.removeAttribute("disabled");
       if (submitButton) submitButton.removeAttribute("disabled");
       feedback.classList.add("text-success");
-      // ИСПРАВЛЕНИЕ: вызываем ключ строго из группы feedback по эталону Хекслета
       feedback.textContent = i18n.t("feedback.success");
-      input.value = "";
+      form.reset();
       input.focus();
     }
 
